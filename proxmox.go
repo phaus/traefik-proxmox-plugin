@@ -14,12 +14,12 @@ import (
 
 // Config the plugin configuration.
 type Config struct {
-	PollInterval   string `json:"pollInterval,omitempty"`
-	ApiEndpoint    string `json:"apiEndpoint,omitempty"`
-	ApiTokenId     string `json:"apiTokenId,omitempty"`
-	ApiToken       string `json:"apiToken,omitempty"`
-	ApiLogging     string `json:"apiLogging,omitempty"`
-	ApiValidateSSL bool   `json:"apiValidateSSL,omitempty"`
+	PollInterval   string `json:"pollInterval" yaml:"pollInterval" toml:"pollInterval"`
+	ApiEndpoint    string `json:"apiEndpoint" yaml:"apiEndpoint" toml:"apiEndpoint"`
+	ApiTokenId     string `json:"apiTokenId" yaml:"apiTokenId" toml:"apiTokenId"`
+	ApiToken       string `json:"apiToken" yaml:"apiToken" toml:"apiToken"`
+	ApiLogging     string `json:"apiLogging" yaml:"apiLogging" toml:"apiLogging"`
+	ApiValidateSSL bool   `json:"apiValidateSSL" yaml:"apiValidateSSL" toml:"apiValidateSSL"`
 }
 
 // CreateConfig creates the default plugin configuration.
@@ -177,6 +177,6 @@ func generateConfiguration(date time.Time) *dynamic.Configuration {
 	return configuration
 }
 
-func boolPtr(v bool) *bool {
-	return &v
-}
+// func boolPtr(v bool) *bool {
+// 	return &v
+// }

@@ -104,11 +104,6 @@ type Headers struct {
 	IsDevelopment                     bool              `json:"isDevelopment,omitempty"`
 }
 
-type IPAllowList struct {
-	SourceRange []string    `json:"sourceRange,omitempty"`
-	IPStrategy  *IPStrategy `json:"ipStrategy,omitempty"`
-}
-
 type IPStrategy struct {
 	Depth       int      `json:"depth,omitempty"`
 	ExcludedIPs []string `json:"excludedIPs,omitempty"`
@@ -132,7 +127,6 @@ type Middleware struct {
 	ReplacePathRegex  *ReplacePathRegex     `json:"replacePathRegex,omitempty"`
 	Chain             *Chain                `json:"chain,omitempty"`
 	IPWhiteList       *IPWhiteList          `json:"ipWhiteList,omitempty"`
-	IPAllowList       *IPAllowList          `json:"ipAllowList,omitempty"`
 	Headers           *Headers              `json:"headers,omitempty"`
 	Errors            *ErrorPage            `json:"errors,omitempty"`
 	RateLimit         *RateLimit            `json:"rateLimit,omitempty"`

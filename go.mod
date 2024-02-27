@@ -4,7 +4,7 @@ go 1.19
 
 require (
 	github.com/luthermonson/go-proxmox v0.0.0-beta4
-	github.com/traefik/genconf v0.4.0
+	github.com/traefik/genconf v0.3.0
 )
 
 require (
