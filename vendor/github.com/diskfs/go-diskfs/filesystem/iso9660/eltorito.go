@@ -10,7 +10,6 @@ import (
 	"github.com/diskfs/go-diskfs/util"
 )
 
-//nolint:deadcode,varcheck,unused // we need these references in the future
 const (
 	elToritoSector        = 0x11
 	elToritoDefaultBlocks = 4
@@ -81,7 +80,7 @@ type ElToritoEntry struct {
 }
 
 // generateCatalog generate the el torito boot catalog file
-func (et *ElTorito) generateCatalog() []byte {
+func (et *ElTorito) generateCatalog() ([]byte, error) {
 	b := make([]byte, 0)
 	b = append(b, et.validationEntry()...)
 	for i, e := range et.Entries {
@@ -91,14 +90,14 @@ func (et *ElTorito) generateCatalog() []byte {
 		}
 		b = append(b, e.entryBytes()...)
 	}
-	return b
+	return b, nil
 }
 
 func (et *ElTorito) validationEntry() []byte {
 	b := make([]byte, 0x20)
 	b[0] = 1
 	b[1] = byte(et.Platform)
-	copy(b[4:0x1c], util.AppNameVersion)
+	copy(b[4:0x1c], []byte(util.AppNameVersion))
 	b[0x1e] = 0x55
 	b[0x1f] = 0xaa
 	// calculate checksum
@@ -144,7 +143,7 @@ func (e *ElToritoEntry) entryBytes() []byte {
 	// b[8:0xc] is the location of the boot image on disk, in disk (2048) sectors
 	binary.LittleEndian.PutUint32(b[8:12], e.location)
 	// b[0xc] is selection criteria type. We do not yet support it, so leave as 0.
-	// b[0xd:] is vendor unique selectiomn criteria. We do not yet support it, so leave as 0.
+	// b[0xd:] is vendor unique selectiomn critiera. We do not yet support it, so leave as 0.
 	return b
 }
 

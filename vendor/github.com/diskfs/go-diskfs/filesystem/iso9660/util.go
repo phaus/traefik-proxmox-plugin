@@ -15,12 +15,19 @@ const (
 	TB int64 = 1024 * GB
 )
 
-func universalizePath(p string) string {
+func universalizePath(p string) (string, error) {
 	// globalize the separator
-	return strings.ReplaceAll(p, `\`, "/")
+	ps := strings.Replace(p, `\`, "/", -1)
+	//if ps[0] != '/' {
+	//return "", errors.New("Must use absolute paths")
+	//}
+	return ps, nil
 }
-func splitPath(p string) []string {
-	ps := universalizePath(p)
+func splitPath(p string) ([]string, error) {
+	ps, err := universalizePath(p)
+	if err != nil {
+		return nil, err
+	}
 	// we need to split such that each one ends in "/", except possibly the last one
 	parts := strings.Split(ps, "/")
 	// eliminate empty parts
@@ -30,7 +37,7 @@ func splitPath(p string) []string {
 			ret = append(ret, sub)
 		}
 	}
-	return ret
+	return ret, nil
 }
 
 func ucs2StringToBytes(s string) []byte {

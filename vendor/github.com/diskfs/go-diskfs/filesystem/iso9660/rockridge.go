@@ -34,19 +34,19 @@ type rockRidgeExtension struct {
 	sfLength   int
 }
 
-func (r *rockRidgeExtension) ID() string {
+func (r rockRidgeExtension) ID() string {
 	return r.id
 }
-func (r *rockRidgeExtension) Descriptor() string {
+func (r rockRidgeExtension) Descriptor() string {
 	return r.descriptor
 }
-func (r *rockRidgeExtension) Source() string {
+func (r rockRidgeExtension) Source() string {
 	return r.source
 }
-func (r *rockRidgeExtension) Version() uint8 {
+func (r rockRidgeExtension) Version() uint8 {
 	return 1
 }
-func (r *rockRidgeExtension) Process(signature string, b []byte) (directoryEntrySystemUseExtension, error) {
+func (r rockRidgeExtension) Process(signature string, b []byte) (directoryEntrySystemUseExtension, error) {
 	// if we have a parser, use it, else use the raw parser
 	var (
 		entry directoryEntrySystemUseExtension
@@ -75,13 +75,13 @@ func (r *rockRidgeExtension) Process(signature string, b []byte) (directoryEntry
 		return nil, ErrSuspNoHandler
 	}
 	if err != nil {
-		return nil, fmt.Errorf("error parsing %s extension by Rock Ridge : %v", signature, err)
+		return nil, fmt.Errorf("Error parsing %s extension by Rock Ridge : %v", signature, err)
 	}
 	return entry, nil
 }
 
 // get the rock ridge filename for a directory entry
-func (r *rockRidgeExtension) GetFilename(de *directoryEntry) (string, error) {
+func (r rockRidgeExtension) GetFilename(de *directoryEntry) (string, error) {
 	found := false
 	name := ""
 	for _, e := range de.extensions {
@@ -92,22 +92,22 @@ func (r *rockRidgeExtension) GetFilename(de *directoryEntry) (string, error) {
 		}
 	}
 	if !found {
-		return "", fmt.Errorf("could not find Rock Ridge filename property")
+		return "", fmt.Errorf("Could not find Rock Ridge filename property")
 	}
 	return name, nil
 }
-func (r *rockRidgeExtension) GetFileExtensions(fp string, isSelf, isParent bool) ([]directoryEntrySystemUseExtension, error) {
+func (r rockRidgeExtension) GetFileExtensions(fp string, isSelf, isParent bool) ([]directoryEntrySystemUseExtension, error) {
 	// we always do PX, TF, NM, SL order
 	ret := []directoryEntrySystemUseExtension{}
 	// do not follow symlinks
 	fi, err := os.Lstat(fp)
 	if err != nil {
-		return nil, fmt.Errorf("error reading file %s: %v", fp, err)
+		return nil, fmt.Errorf("Error reading file %s: %v", fp, err)
 	}
 
 	t, err := times.Lstat(fp)
 	if err != nil {
-		return nil, fmt.Errorf("error reading times %s: %v", fp, err)
+		return nil, fmt.Errorf("Error reading times %s: %v", fp, err)
 	}
 
 	// PX
@@ -140,7 +140,7 @@ func (r *rockRidgeExtension) GetFileExtensions(fp string, isSelf, isParent bool)
 		// need the target if it is a symlink
 		target, err := os.Readlink(fp)
 		if err != nil {
-			return nil, fmt.Errorf("error reading symlink target at %s", fp)
+			return nil, fmt.Errorf("Error reading symlink target at %s", fp)
 		}
 		ret = append(ret, rockRidgeSymlink{continued: false, name: target})
 	}
@@ -148,11 +148,12 @@ func (r *rockRidgeExtension) GetFileExtensions(fp string, isSelf, isParent bool)
 	return ret, nil
 }
 
-func (r *rockRidgeExtension) GetFinalizeExtensions(fi *finalizeFileInfo) ([]directoryEntrySystemUseExtension, error) {
+func (r rockRidgeExtension) GetFinalizeExtensions(fi *finalizeFileInfo) ([]directoryEntrySystemUseExtension, error) {
 	// we look for CL, PL, RE entries
 	ret := []directoryEntrySystemUseExtension{}
 	if fi.trueParent != nil {
-		ret = append(ret, rockRidgeRelocatedDirectory{}, rockRidgeParentDirectory{location: fi.trueParent.location})
+		ret = append(ret, rockRidgeRelocatedDirectory{})
+		ret = append(ret, rockRidgeParentDirectory{location: fi.trueParent.location})
 	}
 	if fi.trueChild != nil {
 		ret = append(ret, rockRidgeChildDirectory{location: fi.trueChild.location})
@@ -161,7 +162,7 @@ func (r *rockRidgeExtension) GetFinalizeExtensions(fi *finalizeFileInfo) ([]dire
 }
 
 // determine if a directory entry was relocated
-func (r *rockRidgeExtension) Relocated(de *directoryEntry) bool {
+func (r rockRidgeExtension) Relocated(de *directoryEntry) bool {
 	relocated := false
 	for _, e := range de.extensions {
 		if _, ok := e.(rockRidgeRelocatedDirectory); ok {
@@ -173,21 +174,21 @@ func (r *rockRidgeExtension) Relocated(de *directoryEntry) bool {
 }
 
 // Relocatable can rock ridge handle deep directory relocations? yes
-func (r *rockRidgeExtension) Relocatable() bool {
+func (r rockRidgeExtension) Relocatable() bool {
 	return true
 }
 
-func (r *rockRidgeExtension) UsePathtable() bool {
+func (r rockRidgeExtension) UsePathtable() bool {
 	return false
 }
 
 // Relocate restructure so that all directories are at a depth of 8 or fewer
-func (r *rockRidgeExtension) Relocate(dirs map[string]*finalizeFileInfo) ([]*finalizeFileInfo, map[string]*finalizeFileInfo, error) {
+func (r rockRidgeExtension) Relocate(dirs map[string]*finalizeFileInfo) ([]*finalizeFileInfo, map[string]*finalizeFileInfo, error) {
 	files := make([]*finalizeFileInfo, 0)
 	root := dirs["."]
 	relocationDir := root
 	if relocationDir.depth == 8 {
-		return nil, nil, fmt.Errorf("cannot relocate when relocation parent already is max depth 8")
+		return nil, nil, fmt.Errorf("Cannot relocate when relocation parent already is max depth 8")
 	}
 	/* logic:
 	 * 1. go down the directories
@@ -248,7 +249,7 @@ func (r *rockRidgeExtension) Relocate(dirs map[string]*finalizeFileInfo) ([]*fin
 }
 
 // find the directory location
-func (r *rockRidgeExtension) GetDirectoryLocation(de *directoryEntry) uint32 {
+func (r rockRidgeExtension) GetDirectoryLocation(de *directoryEntry) uint32 {
 	newEntry := uint32(0)
 	for _, e := range de.extensions {
 		if child, ok := e.(rockRidgeChildDirectory); ok {
@@ -316,41 +317,41 @@ func (d rockRidgePosixAttributes) Data() []byte {
 	regular := true
 	m := d.mode
 	// get Unix permission bits - golang and Rock Ridge use the same ones
-	modes |= uint32(m & 0o777)
+	modes = modes | uint32(m&0777)
 	// get setuid and setgid
-	modes |= uint32(m & os.ModeSetuid)
-	modes |= uint32(m & os.ModeSetgid)
+	modes = modes | uint32(m&os.ModeSetuid)
+	modes = modes | uint32(m&os.ModeSetgid)
 	// save swapped text mode seems to have no parallel
 	if d.saveSwapText {
-		modes |= 0o1000
+		modes = modes | 01000
 	}
 	// the rest of the modes do not use the same bits on Rock Ridge and on golang
 	if m&os.ModeSocket == os.ModeSocket {
-		modes |= 0o140000
+		modes = modes | 0140000
 		regular = false
 	}
 	if m&os.ModeSymlink == os.ModeSymlink {
-		modes |= 0o120000
+		modes = modes | 0120000
 		regular = false
 	}
 	if m&os.ModeDevice == os.ModeDevice {
 		regular = false
 		if m&os.ModeCharDevice == os.ModeCharDevice {
-			modes |= 0o20000
+			modes = modes | 020000
 		} else {
-			modes |= 0o60000
+			modes = modes | 060000
 		}
 	}
 	if m&os.ModeDir == os.ModeDir {
-		modes |= 0o40000
+		modes = modes | 040000
 		regular = false
 	}
 	if m&os.ModeNamedPipe == os.ModeNamedPipe {
-		modes |= 0o10000
+		modes = modes | 010000
 		regular = false
 	}
 	if regular {
-		modes |= 0o100000
+		modes = modes | 0100000
 	}
 
 	binary.LittleEndian.PutUint32(ret[0:4], modes)
@@ -369,7 +370,7 @@ func (d rockRidgePosixAttributes) Data() []byte {
 }
 func (d rockRidgePosixAttributes) Bytes() []byte {
 	ret := make([]byte, 4)
-	copy(ret[0:2], rockRidgeSignaturePosixAttributes)
+	copy(ret[0:2], []byte(rockRidgeSignaturePosixAttributes))
 	ret[2] = uint8(d.Length())
 	ret[3] = d.Version()
 	ret = append(ret, d.Data()...)
@@ -382,49 +383,46 @@ func (d rockRidgePosixAttributes) Merge([]directoryEntrySystemUseExtension) dire
 	return nil
 }
 
-func (r *rockRidgeExtension) parsePosixAttributes(b []byte) (directoryEntrySystemUseExtension, error) {
+func (r rockRidgeExtension) parsePosixAttributes(b []byte) (directoryEntrySystemUseExtension, error) {
 	targetSize := r.pxLength
 	if len(b) != targetSize {
-		//nolint:stylecheck // "Rock Ridge" is a proper noun
 		return nil, fmt.Errorf("Rock Ridge PX extension must be %d bytes, but received %d", targetSize, len(b))
 	}
 	size := b[2]
 	if size != uint8(targetSize) {
-		//nolint:stylecheck // "Rock Ridge" is a proper noun
 		return nil, fmt.Errorf("Rock Ridge PX extension must be %d bytes, but byte 2 indicated %d", targetSize, size)
 	}
 	version := b[3]
 	if version != 1 {
-		//nolint:stylecheck // "Rock Ridge" is a proper noun
 		return nil, fmt.Errorf("Rock Ridge PX extension must be version 1, was %d", version)
 	}
 	// file mode
 	modes := binary.LittleEndian.Uint32(b[4:8])
 	var m uint32
 	// get Unix permission bits - golang and Rock Ridge use the same ones
-	m |= (modes & 0o777)
+	m = m | (modes & 0777)
 	// get setuid and setgid
-	m |= (modes & uint32(os.ModeSetuid))
-	m |= (modes & uint32(os.ModeSetgid))
+	m = m | (modes & uint32(os.ModeSetuid))
+	m = m | (modes & uint32(os.ModeSetgid))
 	// save swapped text mode seems to have no parallel
 	var saveSwapText bool
-	if modes&0o01000 != 0 {
+	if modes&01000 != 0 {
 		saveSwapText = true
 	}
 	// the rest of the modes do not use the same bits on Rock Ridge and on golang, and are exclusive
 	switch {
-	case modes&0o140000 == 0o140000:
-		m |= uint32(os.ModeSocket)
-	case modes&0o120000 == 0o120000:
-		m |= uint32(os.ModeSymlink)
-	case modes&0o20000 == 0o20000:
-		m |= uint32(os.ModeCharDevice | os.ModeDevice)
-	case modes&0o60000 == 0o60000:
-		m |= uint32(os.ModeDevice)
-	case modes&0o40000 == 0o40000:
-		m |= uint32(os.ModeDir)
-	case modes&0o10000 == 0o10000:
-		m |= uint32(os.ModeNamedPipe)
+	case modes&0140000 == 0140000:
+		m = m | uint32(os.ModeSocket)
+	case modes&0120000 == 0120000:
+		m = m | uint32(os.ModeSymlink)
+	case modes&020000 == 020000:
+		m = m | uint32(os.ModeCharDevice|os.ModeDevice)
+	case modes&060000 == 060000:
+		m = m | uint32(os.ModeDevice)
+	case modes&040000 == 040000:
+		m = m | uint32(os.ModeDir)
+	case modes&010000 == 010000:
+		m = m | uint32(os.ModeNamedPipe)
 	}
 
 	var serial uint32
@@ -472,7 +470,7 @@ func (d rockRidgePosixDeviceNumber) Data() []byte {
 }
 func (d rockRidgePosixDeviceNumber) Bytes() []byte {
 	ret := make([]byte, 4)
-	copy(ret[0:2], rockRidgeSignaturePosixDeviceNumber)
+	copy(ret[0:2], []byte(rockRidgeSignaturePosixDeviceNumber))
 	ret[2] = uint8(d.Length())
 	ret[3] = d.Version()
 	ret = append(ret, d.Data()...)
@@ -485,20 +483,17 @@ func (d rockRidgePosixDeviceNumber) Merge([]directoryEntrySystemUseExtension) di
 	return nil
 }
 
-func (r *rockRidgeExtension) parsePosixDeviceNumber(b []byte) (directoryEntrySystemUseExtension, error) {
+func (r rockRidgeExtension) parsePosixDeviceNumber(b []byte) (directoryEntrySystemUseExtension, error) {
 	targetSize := 20
 	if len(b) != targetSize {
-		//nolint:stylecheck // "Rock Ridge" is a proper noun
 		return nil, fmt.Errorf("Rock Ridge PN extension must be %d bytes, but received %d", targetSize, len(b))
 	}
 	size := b[2]
 	if size != uint8(targetSize) {
-		//nolint:stylecheck // "Rock Ridge" is a proper noun
 		return nil, fmt.Errorf("Rock Ridge PN extension must be %d bytes, but byte 2 indicated %d", targetSize, size)
 	}
 	version := b[3]
 	if version != 1 {
-		//nolint:stylecheck // "Rock Ridge" is a proper noun
 		return nil, fmt.Errorf("Rock Ridge PN extension must be version 1, was %d", version)
 	}
 	return rockRidgePosixDeviceNumber{
@@ -541,7 +536,7 @@ func (d rockRidgeSymlink) Bytes() []byte {
 	headerSize := 4 + 1 + 2
 	maxComponentSize := directoryEntryMaxSize - headerSize
 	// break the target of the link down into component parts, and then we can calculate the size
-	components := splitPath(d.name)
+	components, _ := splitPath(d.name)
 	root := false
 	if d.name[0] == "/"[0] {
 		root = true
@@ -559,14 +554,15 @@ func (d rockRidgeSymlink) Bytes() []byte {
 		case ".":
 			cBytes = append(cBytes, []byte{0x2, 0x0})
 		default:
-			cBytes = append(cBytes, []byte{0x0, byte(len(e))}, []byte(e))
+			cBytes = append(cBytes, []byte{0x0, byte(len(e))})
+			cBytes = append(cBytes, []byte(e))
 		}
 	}
 	// we now have cBytes, which is all of the component parts
 	// split into SL entries as needed
 	b := make([]byte, 0)
 	b2 := make([]byte, 5)
-	copy(b2[0:2], rockRidgeSignatureSymbolicLink)
+	copy(b2[0:2], []byte(rockRidgeSignatureSymbolicLink))
 	// we set size and continuing flag when we are done with this entry
 	b2[3] = d.Version()
 	componentByteCount := 0
@@ -579,7 +575,7 @@ func (d rockRidgeSymlink) Bytes() []byte {
 
 			// new record
 			b2 = make([]byte, 5)
-			copy(b2[0:2], rockRidgeSignatureSymbolicLink)
+			copy(b2[0:2], []byte(rockRidgeSignatureSymbolicLink))
 			// we set size and continuing flag when we are done with this entry
 			b2[3] = d.Version()
 			componentByteCount = 0
@@ -602,22 +598,20 @@ func (d rockRidgeSymlink) Continuable() bool {
 func (d rockRidgeSymlink) Merge(links []directoryEntrySystemUseExtension) directoryEntrySystemUseExtension {
 	for _, e := range links {
 		if l, ok := e.(rockRidgeSymlink); ok {
-			d.name += l.name
+			d.name = d.name + l.name
 		}
 	}
 	d.continued = false
 	return d
 }
 
-func (r *rockRidgeExtension) parseSymlink(b []byte) (directoryEntrySystemUseExtension, error) {
+func (r rockRidgeExtension) parseSymlink(b []byte) (directoryEntrySystemUseExtension, error) {
 	size := int(b[2])
 	if size != len(b) {
-		//nolint:stylecheck // "Rock Ridge" is a proper noun
 		return nil, fmt.Errorf("Rock Ridge SL extension received %d bytes, but byte 2 indicated %d", len(b), size)
 	}
 	version := b[3]
 	if version != 1 {
-		//nolint:stylecheck // "Rock Ridge" is a proper noun
 		return nil, fmt.Errorf("Rock Ridge SL extension must be version 1, was %d", version)
 	}
 	continued := b[4] == 1
@@ -630,13 +624,13 @@ func (r *rockRidgeExtension) parseSymlink(b []byte) (directoryEntrySystemUseExte
 		size := b2[1]
 		switch {
 		case flags&0x1 == 0x1:
-			name += "."
+			name = name + "."
 		case flags&0x2 == 0x2:
-			name += ".."
+			name = name + ".."
 		case flags&0x3 == 0x3:
 			name = "/"
 		case size > 0:
-			name += "/" + string(b2[2:2+size])
+			name = name + "/" + string(b2[2:2+size])
 		}
 
 		i += 2 + int(size)
@@ -691,10 +685,10 @@ func (d rockRidgeName) Bytes() []byte {
 	b := make([]byte, 0)
 	for i := 0; i < count; i++ {
 		b2 := make([]byte, 5)
-		copy(b2[0:2], rockRidgeSignatureName)
+		copy(b2[0:2], []byte(rockRidgeSignatureName))
 		// we set size and continuing flag when we are done with this entry
 		b2[3] = d.Version()
-		copyBytes := nameBytes
+		copyBytes := nameBytes[:]
 		continuing := 0
 		if len(nameBytes) > maxComponentSize {
 			copyBytes = nameBytes[:maxComponentSize]
@@ -704,10 +698,10 @@ func (d rockRidgeName) Bytes() []byte {
 		b2[2] = 5 + uint8(len(copyBytes))
 		flags := 0x0 | continuing
 		if d.current {
-			flags |= 0x2
+			flags = flags | 0x2
 		}
 		if d.parent {
-			flags |= 0x4
+			flags = flags | 0x4
 		}
 		b2[4] = byte(flags)
 
@@ -721,22 +715,20 @@ func (d rockRidgeName) Continuable() bool {
 func (d rockRidgeName) Merge(names []directoryEntrySystemUseExtension) directoryEntrySystemUseExtension {
 	for _, e := range names {
 		if n, ok := e.(rockRidgeName); ok {
-			d.name += n.name
+			d.name = d.name + n.name
 		}
 	}
 	d.continued = false
 	return d
 }
 
-func (r *rockRidgeExtension) parseName(b []byte) (directoryEntrySystemUseExtension, error) {
+func (r rockRidgeExtension) parseName(b []byte) (directoryEntrySystemUseExtension, error) {
 	size := int(b[2])
 	if size != len(b) {
-		//nolint:stylecheck // "Rock Ridge" is a proper noun
 		return nil, fmt.Errorf("Rock Ridge NM extension received %d bytes, but byte 2 indicated %d", len(b), size)
 	}
 	version := b[3]
 	if version != 1 {
-		//nolint:stylecheck // "Rock Ridge" is a proper noun
 		return nil, fmt.Errorf("Rock Ridge NM extension must be version 1, was %d", version)
 	}
 	continued := b[4]&1 != 0
@@ -847,11 +839,11 @@ func (d rockRidgeTimestamps) Data() []byte {
 }
 func (d rockRidgeTimestamps) Bytes() []byte {
 	b := make([]byte, 5)
-	copy(b[0:2], rockRidgeSignatureTimestamps)
+	copy(b[0:2], []byte(rockRidgeSignatureTimestamps))
 	b[2] = uint8(d.Length())
 	b[3] = d.Version()
 	if d.longForm {
-		b[4] |= rockRidgeTimestampLongForm
+		b[4] = b[4] | rockRidgeTimestampLongForm
 	}
 
 	// now get all of the timestamps
@@ -861,7 +853,7 @@ func (d rockRidgeTimestamps) Bytes() []byte {
 	sort.Sort(rockRidgeTimestampByBitOrder(d.stamps))
 	for _, t := range d.stamps {
 		var b2 []byte
-		b[4] |= t.timestampType
+		b[4] = b[4] | t.timestampType
 		if d.longForm {
 			b2 = timeToDecBytes(t.time)
 		} else {
@@ -879,15 +871,13 @@ func (d rockRidgeTimestamps) Merge([]directoryEntrySystemUseExtension) directory
 	return nil
 }
 
-func (r *rockRidgeExtension) parseTimestamps(b []byte) (directoryEntrySystemUseExtension, error) {
+func (r rockRidgeExtension) parseTimestamps(b []byte) (directoryEntrySystemUseExtension, error) {
 	size := b[2]
 	if int(size) != len(b) {
-		//nolint:stylecheck // "Rock Ridge" is a proper noun
 		return nil, fmt.Errorf("Rock Ridge TF extension has %d bytes, but byte 2 indicated %d", len(b), size)
 	}
 	version := b[3]
 	if version != 1 {
-		//nolint:stylecheck // "Rock Ridge" is a proper noun
 		return nil, fmt.Errorf("Rock Ridge TF extension must be version 1, was %d", version)
 	}
 	// what timestamps are recorded?
@@ -905,28 +895,27 @@ func (r *rockRidgeExtension) parseTimestamps(b []byte) (directoryEntrySystemUseE
 	tfTypes := []uint8{rockRidgeTimestampCreation, rockRidgeTimestampModify, rockRidgeTimestampAccess, rockRidgeTimestampAttribute,
 		rockRidgeTimestampBackup, rockRidgeTimestampExpiration, rockRidgeTimestampEffective}
 	for _, tf := range tfTypes {
-		if flags&tf == 0 {
-			continue
-		}
-		timeBytes := tfBytes[:entryLength]
-		tfBytes = tfBytes[entryLength:]
-		var (
-			t   time.Time
-			err error
-		)
-		if longForm {
-			t, err = decBytesToTime(timeBytes)
-			if err != nil {
-				return nil, fmt.Errorf("could not process timestamp %d bytes to long form bytes: %v % x", tf, err, timeBytes)
+		if flags&tf != 0 {
+			timeBytes := tfBytes[:entryLength]
+			tfBytes = tfBytes[entryLength:]
+			var (
+				t   time.Time
+				err error
+			)
+			if longForm {
+				t, err = decBytesToTime(timeBytes)
+				if err != nil {
+					return nil, fmt.Errorf("Could not process timestamp %d bytes to long form bytes: %v % x", tf, err, timeBytes)
+				}
+			} else {
+				t = bytesToTime(timeBytes)
 			}
-		} else {
-			t = bytesToTime(timeBytes)
+			entry := rockRidgeTimestamp{
+				time:          t,
+				timestampType: tf,
+			}
+			entries = append(entries, entry)
 		}
-		entry := rockRidgeTimestamp{
-			time:          t,
-			timestampType: tf,
-		}
-		entries = append(entries, entry)
 	}
 
 	return rockRidgeTimestamps{
@@ -961,7 +950,7 @@ func (d rockRidgeSparseFile) Data() []byte {
 }
 func (d rockRidgeSparseFile) Bytes() []byte {
 	b := make([]byte, d.length)
-	copy(b[0:2], rockRidgeSignatureSparseFile)
+	copy(b[0:2], []byte(rockRidgeSignatureSparseFile))
 	b[2] = uint8(d.Length())
 	b[3] = d.Version()
 
@@ -982,20 +971,17 @@ func (d rockRidgeSparseFile) Merge([]directoryEntrySystemUseExtension) directory
 	return nil
 }
 
-func (r *rockRidgeExtension) parseSparseFile(b []byte) (directoryEntrySystemUseExtension, error) {
+func (r rockRidgeExtension) parseSparseFile(b []byte) (directoryEntrySystemUseExtension, error) {
 	targetSize := r.sfLength
 	if len(b) != targetSize {
-		//nolint:stylecheck // "Rock Ridge" is a proper noun
 		return nil, fmt.Errorf("Rock Ridge SF extension must be %d bytes, but received %d", targetSize, len(b))
 	}
 	size := b[2]
 	if size != uint8(targetSize) {
-		//nolint:stylecheck // "Rock Ridge" is a proper noun
 		return nil, fmt.Errorf("Rock Ridge SF extension must be %d bytes, but byte 2 indicated %d", targetSize, size)
 	}
 	version := b[3]
 	if version != 1 {
-		//nolint:stylecheck // "Rock Ridge" is a proper noun
 		return nil, fmt.Errorf("Rock Ridge SF extension must be version 1, was %d", version)
 	}
 	sf := &rockRidgeSparseFile{
@@ -1032,7 +1018,7 @@ func (d rockRidgeChildDirectory) Data() []byte {
 }
 func (d rockRidgeChildDirectory) Bytes() []byte {
 	b := make([]byte, 12)
-	copy(b[0:2], rockRidgeSignatureChild)
+	copy(b[0:2], []byte(rockRidgeSignatureChild))
 	b[2] = uint8(d.Length())
 	b[3] = d.Version()
 	binary.LittleEndian.PutUint32(b[4:8], d.location)
@@ -1046,20 +1032,17 @@ func (d rockRidgeChildDirectory) Merge([]directoryEntrySystemUseExtension) direc
 	return nil
 }
 
-func (r *rockRidgeExtension) parseChildDirectory(b []byte) (directoryEntrySystemUseExtension, error) {
+func (r rockRidgeExtension) parseChildDirectory(b []byte) (directoryEntrySystemUseExtension, error) {
 	targetSize := 12
 	if len(b) != targetSize {
-		//nolint:stylecheck // "Rock Ridge" is a proper noun
 		return nil, fmt.Errorf("Rock Ridge CL extension must be %d bytes, but received %d", targetSize, len(b))
 	}
 	size := b[2]
 	if size != uint8(targetSize) {
-		//nolint:stylecheck // "Rock Ridge" is a proper noun
 		return nil, fmt.Errorf("Rock Ridge CL extension must be %d bytes, but byte 2 indicated %d", targetSize, size)
 	}
 	version := b[3]
 	if version != 1 {
-		//nolint:stylecheck // "Rock Ridge" is a proper noun
 		return nil, fmt.Errorf("Rock Ridge CL extension must be version 1, was %d", version)
 	}
 	return rockRidgeChildDirectory{
@@ -1090,7 +1073,7 @@ func (d rockRidgeParentDirectory) Data() []byte {
 }
 func (d rockRidgeParentDirectory) Bytes() []byte {
 	b := make([]byte, 12)
-	copy(b[0:2], rockRidgeSignatureParent)
+	copy(b[0:2], []byte(rockRidgeSignatureParent))
 	b[2] = uint8(d.Length())
 	b[3] = d.Version()
 	binary.LittleEndian.PutUint32(b[4:8], d.location)
@@ -1104,20 +1087,17 @@ func (d rockRidgeParentDirectory) Merge([]directoryEntrySystemUseExtension) dire
 	return nil
 }
 
-func (r *rockRidgeExtension) parseParentDirectory(b []byte) (directoryEntrySystemUseExtension, error) {
+func (r rockRidgeExtension) parseParentDirectory(b []byte) (directoryEntrySystemUseExtension, error) {
 	targetSize := 12
 	if len(b) != targetSize {
-		//nolint:stylecheck // "Rock Ridge" is a proper noun
 		return nil, fmt.Errorf("Rock Ridge PL extension must be %d bytes, but received %d", targetSize, len(b))
 	}
 	size := b[2]
 	if size != uint8(targetSize) {
-		//nolint:stylecheck // "Rock Ridge" is a proper noun
 		return nil, fmt.Errorf("Rock Ridge PL extension must be %d bytes, but byte 2 indicated %d", targetSize, size)
 	}
 	version := b[3]
 	if version != 1 {
-		//nolint:stylecheck // "Rock Ridge" is a proper noun
 		return nil, fmt.Errorf("Rock Ridge PL extension must be version 1, was %d", version)
 	}
 	return rockRidgeParentDirectory{
@@ -1147,7 +1127,7 @@ func (d rockRidgeRelocatedDirectory) Data() []byte {
 }
 func (d rockRidgeRelocatedDirectory) Bytes() []byte {
 	b := make([]byte, 8)
-	copy(b[0:2], rockRidgeSignatureRelocatedDirectory)
+	copy(b[0:2], []byte(rockRidgeSignatureRelocatedDirectory))
 	b[2] = uint8(d.Length())
 	b[3] = d.Version()
 	return b
@@ -1159,20 +1139,17 @@ func (d rockRidgeRelocatedDirectory) Merge([]directoryEntrySystemUseExtension) d
 	return nil
 }
 
-func (r *rockRidgeExtension) parseRelocatedDirectory(b []byte) (directoryEntrySystemUseExtension, error) {
+func (r rockRidgeExtension) parseRelocatedDirectory(b []byte) (directoryEntrySystemUseExtension, error) {
 	targetSize := 4
 	if len(b) != targetSize {
-		//nolint:stylecheck // "Rock Ridge" is a proper noun
 		return nil, fmt.Errorf("Rock Ridge RE extension must be %d bytes, but received %d", targetSize, len(b))
 	}
 	size := b[2]
 	if size != uint8(targetSize) {
-		//nolint:stylecheck // "Rock Ridge" is a proper noun
 		return nil, fmt.Errorf("Rock Ridge RE extension must be %d bytes, but byte 2 indicated %d", targetSize, size)
 	}
 	version := b[3]
 	if version != 1 {
-		//nolint:stylecheck // "Rock Ridge" is a proper noun
 		return nil, fmt.Errorf("Rock Ridge RE extension must be version 1, was %d", version)
 	}
 	return rockRidgeRelocatedDirectory{}, nil

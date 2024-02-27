@@ -2,24 +2,15 @@ language: go
 matrix:
     include:
         - os: linux
-          go: tip
+          go: 1.11
         - os: linux
-          go: tip
+          go: 1.11
           env:
             - JS=1
         - os: osx
-          go: tip
+          go: 1.11
         - os: windows
-          go: 1.x
-#Added power jobs
-        - os: linux
-          go: tip
-          arch: ppc64le
-        - os: linux
-          go: tip
-          arch: ppc64le
-          env:
-            - JS=1
+          go: 1.11
 script: bash .travis.sh script
 notifications:
   webhooks: https://coveralls.io/webhook
