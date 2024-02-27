@@ -1,8 +1,11 @@
 module github.com/phaus/traefik-proxmox-plugin
 
-go 1.22.0
+go 1.19
 
-require github.com/luthermonson/go-proxmox v0.0.0-beta4
+require (
+	github.com/luthermonson/go-proxmox v0.0.0-beta4
+	github.com/traefik/genconf v0.3.0
+)
 
 require (
 	github.com/buger/goterm v1.0.4 // indirect

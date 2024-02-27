@@ -1,0 +1,15 @@
+displayName: Proxmox Provider Plugin
+type: provider
+iconPath: .assets/icon.png
+
+import: github.com/phaus/traefik-proxmox-plugin
+
+summary: 'Proxmox Provider Plugin'
+
+testData:
+  pollInterval: 5s
+  apiEndpoint: http://127.0.0.1:8006
+  apiTokenId: 
+  apiToken: 
+  apiLogging: info
+  apiValidateSSL: false
