@@ -1,0 +1,7 @@
+export API_ENDPOINT=https://192.168.168.101:8006
+export API_TOKEN_ID=
+export API_TOKEN=
+# valid values info/debug - default info
+export API_LOGGING=debug
+# valid values true/false - default true
+export API_VALIDATE_SSL=false
