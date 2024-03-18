@@ -14,10 +14,8 @@ Example:
 
 ```ini
 "traefik.enable": "true" 
-"traefik.http.routers.umbrelvm.entrypoints": "websecure" 
-"traefik.http.routers.umbrelvm.rule": "Host(umbrelvm.org)" 
-"traefik.http.routers.umbrelvm.tls": "true" 
-"traefik.http.routers.umbrelvm.tls.certresolver": "leresolver" 
+"traefik.http.routers.umbrelvm.entrypoints": "http" 
+"traefik.http.routers.umbrelvm.rule": "Host(`example.com`)" 
 "traefik.http.services.umbrelvm.loadbalancer.server.port": "80"
 ```
 
@@ -26,12 +24,22 @@ This Content will be parsed as:
 ```json
 {
     "traefik.enable": "true",
-    "traefik.http.routers.umbrelvm.entrypoints": "websecure",
-    "traefik.http.routers.umbrelvm.rule": "Host(`umbrelvm.org`)",
-    "traefik.http.routers.umbrelvm.tls": "true",
-    "traefik.http.routers.umbrelvm.tls.certresolver": "leresolver",
+    "traefik.http.routers.umbrelvm.entrypoints": "http",
+    "traefik.http.routers.umbrelvm.rule": "Host(`example.com`)",
     "traefik.http.services.umbrelvm.loadbalancer.server.port": "80"
 }
+```
+
+The plugin tries to get IPs from running VMs. This does only work, if the QEMU Guest Agent is installed, running and configured in Proxmox.  
+
+For running containers, the IP has to be set via the config like this:  
+
+```ini
+"traefik.enable": "true"
+"traefik.http.routers.web.entrypoints": "http"
+"traefik.http.routers.web.rule": "Host(`web.example.com`)"
+"traefik.http.services.web.loadbalancer.server.port": "80"
+"traefik.http.services.web.loadbalancer.server.ipv4": "192.168.168.131" 
 ```
 
 ## Required Permissions

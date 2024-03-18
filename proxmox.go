@@ -8,6 +8,8 @@ import (
 	"log"
 	"time"
 
+	"github.com/luthermonson/go-proxmox"
+	"github.com/phaus/traefik-proxmox-plugin/internal"
 	"github.com/traefik/genconf/dynamic"
 	"github.com/traefik/genconf/dynamic/tls"
 )
@@ -19,29 +21,24 @@ type Config struct {
 	ApiTokenId     string `json:"apiTokenId" yaml:"apiTokenId" toml:"apiTokenId"`
 	ApiToken       string `json:"apiToken" yaml:"apiToken" toml:"apiToken"`
 	ApiLogging     string `json:"apiLogging" yaml:"apiLogging" toml:"apiLogging"`
-	ApiValidateSSL bool   `json:"apiValidateSSL" yaml:"apiValidateSSL" toml:"apiValidateSSL"`
+	ApiValidateSSL string `json:"apiValidateSSL" yaml:"apiValidateSSL" toml:"apiValidateSSL"`
 }
 
 // CreateConfig creates the default plugin configuration.
 func CreateConfig() *Config {
 	return &Config{
 		PollInterval:   "5s", // 5 * time.Second
-		ApiValidateSSL: true,
+		ApiValidateSSL: "true",
 		ApiLogging:     "info",
 	}
 }
 
 // Provider a plugin.
 type Provider struct {
-	name           string
-	pollInterval   time.Duration
-	apiEndpoint    string
-	apiTokenId     string
-	apitToken      string
-	apiLogging     string
-	apiValidateSSL bool
-
-	cancel func()
+	name         string
+	pollInterval time.Duration
+	client       *proxmox.Client
+	cancel       func()
 }
 
 // New creates a new Provider plugin.
@@ -51,27 +48,41 @@ func New(ctx context.Context, config *Config, name string) (*Provider, error) {
 		return nil, err
 	}
 
+	if len(config.PollInterval) <= 0 {
+		return nil, fmt.Errorf("poll interval must be greater than 0")
+	}
+
+	if len(config.ApiEndpoint) <= 0 {
+		return nil, fmt.Errorf("api Endpoint has to be set")
+	}
+
+	pc, err := NewParserConfig(
+		config.ApiEndpoint,
+		config.ApiTokenId,
+		config.ApiToken,
+	)
+	if err != nil {
+		return nil, err
+	}
+
+	pc.LogLevel = config.ApiLogging
+	pc.ValidateSSL = config.ApiValidateSSL == "true"
+	client := NewClient(pc)
+
+	err = LogVersion(client, ctx)
+	if err != nil {
+		return nil, err
+	}
+
 	return &Provider{
-		name:           name,
-		pollInterval:   pi,
-		apiEndpoint:    config.ApiEndpoint,
-		apiTokenId:     config.ApiTokenId,
-		apitToken:      config.ApiToken,
-		apiLogging:     config.ApiLogging,
-		apiValidateSSL: config.ApiValidateSSL,
+		name:         name,
+		pollInterval: pi,
+		client:       client,
 	}, nil
 }
 
 // Init the provider.
 func (p *Provider) Init() error {
-	if p.pollInterval <= 0 {
-		return fmt.Errorf("poll interval must be greater than 0")
-	}
-
-	if len(p.apiEndpoint) <= 0 {
-		return fmt.Errorf("api Endpoint has to be set")
-
-	}
 	return nil
 }
 
@@ -100,10 +111,13 @@ func (p *Provider) loadConfiguration(ctx context.Context, cfgChan chan<- json.Ma
 	for {
 		select {
 		case t := <-ticker.C:
-			configuration := generateConfiguration(t)
-
-			cfgChan <- &dynamic.JSONPayload{Configuration: configuration}
-
+			servicesMap, err := GetServiceMap(p.client, ctx)
+			if err != nil {
+				log.Print(err)
+			} else {
+				configuration := generateConfiguration(t, servicesMap)
+				cfgChan <- &dynamic.JSONPayload{Configuration: configuration}
+			}
 		case <-ctx.Done():
 			return
 		}
@@ -116,7 +130,7 @@ func (p *Provider) Stop() error {
 	return nil
 }
 
-func generateConfiguration(date time.Time) *dynamic.Configuration {
+func generateConfiguration(date time.Time, servicesMap map[string][]internal.Service) *dynamic.Configuration {
 	configuration := &dynamic.Configuration{
 		HTTP: &dynamic.HTTPConfiguration{
 			Routers:           make(map[string]*dynamic.Router),
