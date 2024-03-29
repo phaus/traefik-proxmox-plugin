@@ -3,7 +3,6 @@ package proxmox
 import (
 	"context"
 	"fmt"
-	"net/url"
 	"strings"
 )
 
@@ -27,14 +26,6 @@ func (n *Node) Version(ctx context.Context) (version *Version, err error) {
 
 func (n *Node) TermProxy(ctx context.Context) (vnc *VNC, err error) {
 	return vnc, n.client.Post(ctx, fmt.Sprintf("/nodes/%s/termproxy", n.Name), nil, &vnc)
-}
-
-// VNCWebSocket send, recv, errors, closer, error
-func (n *Node) VNCWebSocket(vnc *VNC) (chan string, chan string, chan error, func() error, error) {
-	p := fmt.Sprintf("/nodes/%s/vncwebsocket?port=%d&vncticket=%s",
-		n.Name, vnc.Port, url.QueryEscape(vnc.Ticket))
-
-	return n.client.VNCWebSocket(p, vnc)
 }
 
 func (n *Node) VirtualMachines(ctx context.Context) (vms VirtualMachines, err error) {
