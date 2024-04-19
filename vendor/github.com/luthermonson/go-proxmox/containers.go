@@ -100,6 +100,13 @@ func (c *Container) TermProxy(ctx context.Context) (vnc *VNC, err error) {
 	return vnc, c.client.Post(ctx, fmt.Sprintf("/nodes/%s/lxc/%d/termproxy", c.Node, c.VMID), nil, &vnc)
 }
 
+func (c *Container) VNCWebSocket(vnc *VNC) (chan string, chan string, chan error, func() error, error) {
+	p := fmt.Sprintf("/nodes/%s/lxc/%d/vncwebsocket?port=%d&vncticket=%s",
+		c.Node, c.VMID, vnc.Port, url.QueryEscape(vnc.Ticket))
+
+	return c.client.VNCWebSocket(p, vnc)
+}
+
 func (c *Container) Feature(ctx context.Context) (hasFeature bool, err error) {
 	var feature struct {
 		HasFeature bool `json:"hasFeature"`
